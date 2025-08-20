@@ -1,1 +1,1 @@
-testing gpg verify
+TESTING
