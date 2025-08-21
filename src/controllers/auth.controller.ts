@@ -1,16 +1,24 @@
 import { Request, Response } from "express";
 import { AuthService } from "../services/auth.service";
 import { registerSchema, loginSchema } from "../validators/auth.validator";
+import { ZodError } from "zod";
 
 export class AuthController {
   static async register(req: Request, res: Response) {
     try {
-      console.log(req.body);
       const parsed = registerSchema.parse(req.body);
-      console.log(parsed);
       const user = await AuthService.register(parsed);
       return res.status(201).json({ message: "Registrasi berhasil", user });
     } catch (error: any) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          errors: error.issues.map((issue) => ({
+            path: issue.path.join("."),
+            message: issue.message,
+          })),
+        });
+      }
+
       return res.status(400).json({ message: error.message || "Registrasi gagal" });
     }
   }
@@ -21,6 +29,14 @@ export class AuthController {
       const result = await AuthService.login(parsed);
       return res.status(200).json({ message: "Login berhasil", ...result });
     } catch (error: any) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({
+          errors: error.issues.map((issue) => ({
+            path: issue.path.join("."),
+            message: issue.message,
+          })),
+        });
+      }
       return res.status(400).json({ message: error.message || "Login gagal" });
     }
   }
